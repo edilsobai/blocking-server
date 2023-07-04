@@ -1,21 +1,32 @@
-const express = require("express")
+const express = require("express");
+const cluster = require("cluster");
+const os = require("os") 
+const app = express();
 
-const app = express()
-
-function delay(performance) {
-    const startTime = Date.now()
-    
-    while(Date.now() - startTime < performance){
-
-    }
+function delay(duration) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < duration) {}
 }
+
 app.get("/", (req, res) => {
-    res.send("Home page")
-})
+  res.send("Home page");
+});
 
 app.get("/timer", (req, res) => {
-    delay(9000)
-    res.send("Timer page")
-})
+  delay(9000);
+  res.send(`Process PID: ${process.pid}`);
+});
 
-app.listen(5000, () => console.log("running on port: 5000"))
+console.log("Running server...");
+if (cluster.isMaster) {
+    console.log(`Master ${process.pid} is running`);
+    const NUM_WORKERS = os.cpus().length 
+    console.log(NUM_WORKERS)
+    for(let i = 0; i < NUM_WORKERS; i ++){
+    cluster.fork();
+    }
+  
+} else {
+  console.log(`Worker ${process.pid} is running`);
+  app.listen(5000, () => console.log("Running on port: 5000"));
+}
